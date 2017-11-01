@@ -1,9 +1,12 @@
-#CS510 Web Security Andrew Rogers Program 1
-#Fall 2017
+"""
+CS510 Web Security Andrew Rogers Program 1
+Fall 2017
 
-'''
+A blind SQL Injection program for a MongoDB database using a recursive binary
+search tree with decreasing ranges 
+"""
 
-target_url = "http://localhost:8000/mongodb/example2/"'''
+
 import requests
 import urllib
 import sys
